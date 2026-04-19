@@ -29,6 +29,14 @@ GROQ_MODELS = [
 ]
 
 
+def _ensure_absolute_http_url(raw: str) -> str:
+    """Prepend https:// when user types host-only (API expects HttpUrl)."""
+    u = raw.strip()
+    if not u or "://" in u:
+        return u
+    return f"https://{u}"
+
+
 def _api_get(base: str, path: str, *, params: dict[str, Any] | None = None, headers: dict[str, str]) -> Any:
     r = httpx.get(f"{base}{path}", params=params or {}, headers=headers, timeout=120.0)
     r.raise_for_status()
@@ -146,7 +154,10 @@ def main() -> None:
         rlim = st.slider("RAG hits", 1, 25, 8)
         if st.button("Run engagement", type="primary"):
             try:
-                body: dict[str, Any] = {"target_url": url.strip(), "rag_limit": rlim}
+                body: dict[str, Any] = {
+                    "target_url": _ensure_absolute_http_url(url),
+                    "rag_limit": rlim,
+                }
                 if hint.strip():
                     body["rag_query_hint"] = hint.strip()
                 data = _api_post(api_base, "/v1/engagement/run", json_body=body, headers=h())
