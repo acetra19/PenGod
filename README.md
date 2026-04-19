@@ -81,6 +81,23 @@ curl -sS -X POST http://127.0.0.1:8080/v1/engagement/run \
 
 If `PENGOD_API_KEY` is set in the environment, send header `X-API-Key: <your-key>`.
 
+### Strategist run (probe → RAG → Ollama report)
+
+`POST /v1/strategist/run` runs a **LangGraph** pipeline per URL: HTTP probe (same SSRF guards as engagement) → semantic search → **Ollama** `/api/chat` to produce a markdown-style strategy report. Configure `OLLAMA_BASE_URL`, `STRATEGIST_MODEL`, and `STRATEGIST_RAG_LIMIT` in the environment. The API container must reach Ollama (e.g. on the host: `OLLAMA_BASE_URL=http://host.docker.internal:11434` on Windows/Mac Docker Desktop, or run Ollama on the same network as the API).
+
+Request body:
+
+- `target_urls`: array of `https://...` URLs (required), or legacy single `target_url`
+- optional `program_scope`: free text (bug bounty scope) — blended into RAG and passed to the Strategist so suggestions stay aligned
+
+Response: `runs` is an array of per-URL results (`probe`, `rag_query`, `rag_hits`, `strategist_report`, `pipeline_error`).
+
+```bash
+curl -sS -X POST http://127.0.0.1:8080/v1/strategist/run \
+  -H "Content-Type: application/json" \
+  -d '{"target_urls":["https://example.com"],"program_scope":"In scope: example.com web app only."}'
+```
+
 ### Web UI (Streamlit)
 
 Install the UI extra, then point the browser at the app (API must be running — local or VPS).
@@ -94,7 +111,7 @@ In the sidebar set **API base URL** (e.g. `http://127.0.0.1:8000` or `http://YOU
 
 **Assistant LLM:** choose **Groq (cloud)** or **Ollama (local)**. For Groq, set `GROQ_API_KEY` in the environment before starting Streamlit, or paste the key in the sidebar (session only). Get a key from [Groq Console](https://console.groq.com/) — never commit keys or paste them in public chats.
 
-Tabs: **Semantic search**, **Engagement run** (probe + RAG), **Assistant** (chat with optional RAG grounding).
+Tabs: **Agent run** (scope + URLs → Strategist per URL), **Semantic search**, **Engagement run** (probe + RAG only), **Assistant** (chat with optional RAG grounding). The Streamlit sidebar **Ollama URL** applies to the Assistant tab only; the Strategist uses `OLLAMA_BASE_URL` on the API server.
 
 ### Run the API
 
@@ -108,7 +125,8 @@ uvicorn pengod.api.app:app --reload --host 127.0.0.1 --port 8000
 ## Package layout
 
 - `pengod/api/` — FastAPI app (`pengod.api.app:app`)
-- `pengod/agents/` — LangGraph stubs (`build_research_stub_graph`)
+- `pengod/agents/` — LangGraph (`build_research_stub_graph`, Strategist pipeline)
+- `pengod/llm/` — Ollama async client for Strategist
 - `pengod/ingest/` — Case-study parser, chunking, embeddings, Qdrant ingest pipeline
 - `pengod/schemas/` — Pydantic models (e.g. vulnerability reports)
 - `pengod/rag/` — Qdrant utilities, context refinement, semantic search

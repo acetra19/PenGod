@@ -4,24 +4,15 @@ from __future__ import annotations
 
 from typing import Any
 
-from fastapi import APIRouter, Depends, Header, HTTPException, Request
+from fastapi import APIRouter, Depends, HTTPException, Request
 from pydantic import BaseModel, Field, HttpUrl
 
+from pengod.api.deps import verify_optional_api_key
 from pengod.config import get_settings
 from pengod.recon.probe import build_rag_query_from_probe, probe_target_url
 from pengod.rag.search import semantic_search
 
 router = APIRouter(tags=["engagement"])
-
-
-async def verify_optional_api_key(
-    request: Request,
-    x_api_key: str | None = Header(default=None, alias="X-API-Key"),
-) -> None:
-    settings = getattr(request.app.state, "settings", None) or get_settings()
-    expected = settings.pengod_api_key
-    if expected and (not x_api_key or x_api_key != expected):
-        raise HTTPException(status_code=401, detail="Invalid or missing API key")
 
 
 class EngagementRunBody(BaseModel):

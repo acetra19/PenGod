@@ -1,5 +1,5 @@
 """
-Streamlit front-end: semantic search, engagement run, LLM assistant (Ollama or Groq).
+Streamlit front-end: agent run (probe + RAG + Strategist), search, engagement, LLM assistant.
 Run: streamlit run pengod/ui/app.py
 Set GROQ_API_KEY in the environment for Groq, or paste once per session (not persisted).
 """
@@ -37,15 +37,32 @@ def _ensure_absolute_http_url(raw: str) -> str:
     return f"https://{u}"
 
 
+def _parse_target_urls(raw: str) -> list[str]:
+    """One URL per line or comma-separated; empty lines skipped."""
+    out: list[str] = []
+    for line in raw.replace(",", "\n").splitlines():
+        u = line.strip()
+        if u:
+            out.append(_ensure_absolute_http_url(u))
+    return out
+
+
 def _api_get(base: str, path: str, *, params: dict[str, Any] | None = None, headers: dict[str, str]) -> Any:
     r = httpx.get(f"{base}{path}", params=params or {}, headers=headers, timeout=120.0)
     r.raise_for_status()
     return r.json()
 
 
-def _api_post(base: str, path: str, *, json_body: dict[str, Any], headers: dict[str, str]) -> Any:
+def _api_post(
+    base: str,
+    path: str,
+    *,
+    json_body: dict[str, Any],
+    headers: dict[str, str],
+    timeout: float = 180.0,
+) -> Any:
     h = {**headers, "Content-Type": "application/json"}
-    r = httpx.post(f"{base}{path}", json=json_body, headers=h, timeout=180.0)
+    r = httpx.post(f"{base}{path}", json=json_body, headers=h, timeout=timeout)
     r.raise_for_status()
     return r.json()
 
@@ -123,6 +140,9 @@ def main() -> None:
             groq_model = st.selectbox("Groq model", GROQ_MODELS, index=0)
         else:
             ollama_base = st.text_input("Ollama URL", value="http://127.0.0.1:11434").rstrip("/")
+        st.caption(
+            "Strategist uses Ollama on the API server (`OLLAMA_BASE_URL`), not this sidebar URL."
+        )
 
     def h() -> dict[str, str]:
         out: dict[str, str] = {}
@@ -130,7 +150,80 @@ def main() -> None:
             out["X-API-Key"] = api_key
         return out
 
-    t_search, t_eng, t_llm = st.tabs(["Semantic search", "Engagement run", "Assistant (LLM)"])
+    t_agents, t_search, t_eng, t_llm = st.tabs(
+        ["Agent run", "Semantic search", "Engagement run", "Assistant (LLM)"]
+    )
+
+    with t_agents:
+        with st.expander("Where Ollama runs for Strategist"):
+            st.markdown(
+                "The **Agent run** tab calls your PenGod API, which uses **Ollama on the machine "
+                "that runs the API** (`OLLAMA_BASE_URL` in the API environment). "
+                "If the API is in Docker, point that variable at the host (e.g. `http://host.docker.internal:11434`) "
+                "or run Ollama in the same network."
+            )
+        st.markdown(
+            "Enter your **authorized program scope** and **in-scope page URLs** (one per line). "
+            "The API runs probe → RAG → Ollama Strategist per URL. "
+            "This is research assistance only — not automated exploitation."
+        )
+        scope_text = st.text_area(
+            "Program scope",
+            height=140,
+            placeholder=(
+                "e.g. In scope: *.example.com web app, API api.example.com. "
+                "Out of scope: social engineering, DoS. Only test assets listed in the program."
+            ),
+            help="Agents use this to align suggestions with what you are allowed to test.",
+        )
+        urls_raw = st.text_area(
+            "In-scope URLs",
+            height=160,
+            placeholder="https://app.example.com/\nhttps://api.example.com/v1/health",
+            help="One URL per line (or comma-separated). Host-only entries get https://.",
+        )
+        if st.button("Run agents (Strategist)", type="primary"):
+            urls = _parse_target_urls(urls_raw)
+            if not urls:
+                st.warning("Add at least one URL.")
+            else:
+                try:
+                    body: dict[str, Any] = {"target_urls": urls}
+                    sc = scope_text.strip()
+                    if sc:
+                        body["program_scope"] = sc
+                    # Probe + RAG + Ollama per URL (sequential on server)
+                    timeout_s = min(3600.0, max(300.0, 240.0 * len(urls)))
+                    data = _api_post(
+                        api_base,
+                        "/v1/strategist/run",
+                        json_body=body,
+                        headers=h(),
+                        timeout=timeout_s,
+                    )
+                    st.caption(data.get("disclaimer") or "")
+                    if data.get("program_scope"):
+                        st.subheader("Scope sent to agents")
+                        st.text_area("Scope", value=data["program_scope"], height=120, disabled=True)
+                    runs = data.get("runs") or []
+                    st.subheader(f"Results ({len(runs)} URL(s))")
+                    for i, run in enumerate(runs, start=1):
+                        u = run.get("target_url", "")
+                        with st.expander(f"#{i} {u}", expanded=(i == 1)):
+                            if run.get("pipeline_error"):
+                                st.error(run["pipeline_error"])
+                            st.markdown("#### Strategist report")
+                            st.markdown(run.get("strategist_report") or "(empty)")
+                            st.markdown("#### Probe")
+                            st.json(run.get("probe"))
+                            st.markdown("#### RAG query")
+                            st.code(run.get("rag_query") or "")
+                            with st.expander("RAG hits (raw)"):
+                                st.json(run.get("rag_hits"))
+                except httpx.HTTPStatusError as exc:
+                    st.error(f"HTTP {exc.response.status_code}: {exc.response.text[:4000]}")
+                except Exception as exc:
+                    st.error(f"Request failed: {exc}")
 
     with t_search:
         q = st.text_input("Search query", placeholder="e.g. stored XSS attachment flow")

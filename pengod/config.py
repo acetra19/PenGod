@@ -34,10 +34,16 @@ class Settings(BaseSettings):
     chunk_overlap: int = Field(default=150, ge=0, le=2000, description="Char overlap between chunks")
     pengod_api_key: str | None = Field(
         default=None,
-        description="If set, engagement endpoints require header X-API-Key",
+        description="If set, protected POST /v1/* routes require header X-API-Key",
     )
     probe_timeout_seconds: float = Field(default=12.0, ge=2.0, le=60.0)
     probe_max_redirects: int = Field(default=5, ge=0, le=15)
+    ollama_base_url: str = Field(
+        default="http://127.0.0.1:11434",
+        description="Ollama HTTP API for Strategist agent",
+    )
+    strategist_model: str = Field(default="llama3:latest", description="Ollama model id for Strategist")
+    strategist_rag_limit: int = Field(default=10, ge=1, le=25, description="RAG hits passed to Strategist")
 
 
 def get_settings() -> Settings:
