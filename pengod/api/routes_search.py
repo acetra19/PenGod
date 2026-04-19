@@ -21,7 +21,10 @@ async def search_reports(
     qdrant = getattr(request.app.state, "qdrant", None)
     if embedder is None or qdrant is None:
         return {"error": "not_ready", "results": []}
-    qh = getattr(request.app.state, "qdrant_health", {})
+    try:
+        qh = await qdrant.health()
+    except Exception:
+        return {"error": "qdrant_unavailable", "results": []}
     if isinstance(qh, dict) and qh.get("ok") is not True:
         return {"error": "qdrant_unavailable", "results": []}
     results = await semantic_search(q, limit=limit, embedder=embedder, qdrant=qdrant)

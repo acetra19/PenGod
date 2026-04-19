@@ -44,7 +44,17 @@ app.include_router(search_router, prefix="/v1")
 
 @app.get("/health")
 async def health(request: Request) -> dict[str, Any]:
-    qh = getattr(request.app.state, "qdrant_health", {})
+    qdrant = getattr(request.app.state, "qdrant", None)
+    if qdrant is None:
+        return {
+            "status": "degraded",
+            "qdrant": {"ok": False, "error": "not_initialized"},
+            "version": __version__,
+        }
+    try:
+        qh = await qdrant.health()
+    except Exception as exc:  # noqa: BLE001
+        qh = {"ok": False, "error": str(exc)}
     q_ok = bool(isinstance(qh, dict) and qh.get("ok") is True)
     return {
         "status": "ok" if q_ok else "degraded",
