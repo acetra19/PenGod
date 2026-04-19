@@ -14,17 +14,8 @@ from pengod.rag.qdrant_store import QdrantConnection
 from pengod.rag.search import semantic_search
 from pengod.recon.probe import build_rag_query_from_probe, probe_target_url
 
-STRATEGIST_SYSTEM = """You are the Strategist agent in PenGod (authorized bug bounty research).
-You receive HTTP probe data and short excerpts from similar past disclosures (reference only).
-Produce a structured markdown report with:
-1) Executive summary (2-4 sentences)
-2) Observed surface (from probe) — stack hints, status, title
-3) Pattern ideas from RAG excerpts — map to CWE-style classes where possible; do NOT claim vulnerabilities exist on the target
-4) Suggested next checks (manual or tool-assisted) appropriate for an in-scope program — safe, non-destructive
-5) Explicit reminder: only test what the program authorizes
-6) If program_scope is provided, treat it as the authorized scope — align suggestions strictly with it
-
-Do not output exploit code or step-by-step exploitation. Be factual and concise."""
+STRATEGIST_SYSTEM = """PenGod Strategist (authorized research only). Input: probe JSON + short RAG snippets (patterns only, not proof of bugs on target).
+Output markdown: (1) Brief summary (2) Observed surface from probe (3) Pattern ideas from RAG, CWE-style if helpful (4) Safe next checks (5) Respect program_scope if present. No exploit code."""
 
 
 class StrategistState(TypedDict, total=False):
@@ -82,7 +73,7 @@ def build_strategist_graph(
                     "title": pl.get("title"),
                     "weakness": pl.get("weakness"),
                     "severity": pl.get("severity"),
-                    "text_preview": str(pl.get("text", ""))[:400],
+                    "text_preview": str(pl.get("text", ""))[:200],
                 }
             )
         payload = {

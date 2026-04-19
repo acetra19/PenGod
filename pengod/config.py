@@ -45,19 +45,19 @@ class Settings(BaseSettings):
     strategist_model: str = Field(default="llama3:latest", description="Ollama model id for Strategist")
     strategist_rag_limit: int = Field(default=10, ge=1, le=25, description="RAG hits passed to Strategist")
     strategist_max_user_chars: int = Field(
-        default=12000,
-        ge=2000,
+        default=8000,
+        ge=1500,
         le=50000,
         description="Cap JSON user message size for Ollama (RAM on small VPS)",
     )
     strategist_ollama_num_ctx: int = Field(
-        default=4096,
+        default=2048,
         ge=512,
         le=131072,
         description="Ollama num_ctx (KV cache); lower helps 8GB RAM hosts",
     )
     strategist_ollama_num_predict: int = Field(
-        default=1536,
+        default=768,
         ge=128,
         le=32768,
         description="Max new tokens for Strategist reply",
