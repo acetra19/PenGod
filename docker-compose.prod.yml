@@ -13,10 +13,13 @@ services:
       - pengod_internal
 
   # Ollama in the same Docker network — avoids Linux host.docker.internal / firewall issues.
-  # After first start: docker compose -f docker-compose.prod.yml exec ollama ollama pull llama3
+  # Default Strategist model is small for ~8GB RAM VPS (llama3 8B often OOMs with Qdrant + API).
+  # After first start: docker compose -f docker-compose.prod.yml exec ollama ollama pull llama3.2:3b
   ollama:
     image: ollama/ollama:latest
     restart: unless-stopped
+    environment:
+      OLLAMA_MAX_LOADED_MODELS: "1"
     volumes:
       - ollama_data:/root/.ollama
     networks:
@@ -34,7 +37,7 @@ services:
       EMBEDDING_VECTOR_SIZE: "384"
       HF_HOME: /root/.cache/huggingface
       OLLAMA_BASE_URL: http://ollama:11434
-      STRATEGIST_MODEL: llama3:latest
+      STRATEGIST_MODEL: llama3.2:3b
     depends_on:
       - qdrant
       - ollama
