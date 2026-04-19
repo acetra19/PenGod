@@ -32,6 +32,12 @@ class Settings(BaseSettings):
     )
     chunk_size: int = Field(default=1200, ge=200, le=8000, description="Max chars per chunk")
     chunk_overlap: int = Field(default=150, ge=0, le=2000, description="Char overlap between chunks")
+    pengod_api_key: str | None = Field(
+        default=None,
+        description="If set, engagement endpoints require header X-API-Key",
+    )
+    probe_timeout_seconds: float = Field(default=12.0, ge=2.0, le=60.0)
+    probe_max_redirects: int = Field(default=5, ge=0, le=15)
 
 
 def get_settings() -> Settings:

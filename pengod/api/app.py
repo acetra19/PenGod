@@ -8,6 +8,7 @@ from typing import Any
 from fastapi import FastAPI, Request
 
 from pengod import __version__
+from pengod.api.routes_engagement import router as engagement_router
 from pengod.api.routes_search import router as search_router
 from pengod.config import Settings, get_settings
 from pengod.ingest.embeddings import LocalEmbedder
@@ -40,6 +41,7 @@ app = FastAPI(
 )
 
 app.include_router(search_router, prefix="/v1")
+app.include_router(engagement_router, prefix="/v1")
 
 
 @app.get("/health")

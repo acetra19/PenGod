@@ -69,6 +69,18 @@ API (with ingested data):
 
 - `GET /v1/search?q=...&limit=8`
 
+### Engagement run (authorized in-scope URL)
+
+`POST /v1/engagement/run` — HTTP probe (SSRF-guarded) + RAG hits for patterns. **Only use URLs you are allowed to test** (program scope).
+
+```bash
+curl -sS -X POST http://127.0.0.1:8080/v1/engagement/run \
+  -H "Content-Type: application/json" \
+  -d '{"target_url":"https://example.com","rag_limit":5}'
+```
+
+If `PENGOD_API_KEY` is set in the environment, send header `X-API-Key: <your-key>`.
+
 ### Run the API
 
 ```bash
@@ -85,5 +97,6 @@ uvicorn pengod.api.app:app --reload --host 127.0.0.1 --port 8000
 - `pengod/ingest/` — Case-study parser, chunking, embeddings, Qdrant ingest pipeline
 - `pengod/schemas/` — Pydantic models (e.g. vulnerability reports)
 - `pengod/rag/` — Qdrant utilities, context refinement, semantic search
+- `pengod/recon/` — HTTP probe + SSRF checks for engagement flow
 
 All user-facing strings in the app/CLI are **English**.
