@@ -18,6 +18,8 @@ async def ollama_chat(
             f"{base}/api/chat",
             json={"model": model, "messages": messages, "stream": False},
         )
-        r.raise_for_status()
+        if r.status_code >= 400:
+            body = (r.text or "")[:2000]
+            raise RuntimeError(f"Ollama HTTP {r.status_code}: {body}")
         data = r.json()
         return (data.get("message") or {}).get("content") or ""
