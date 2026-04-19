@@ -21,7 +21,7 @@ services:
     environment:
       OLLAMA_MAX_LOADED_MODELS: "1"
       # Fewer threads = lower peak RAM on small VPS (slower but stabler).
-      OLLAMA_NUM_THREAD: "2"
+      OLLAMA_NUM_THREAD: "1"
     volumes:
       - ollama_data:/root/.ollama
     networks:
@@ -40,11 +40,11 @@ services:
       HF_HOME: /root/.cache/huggingface
       OLLAMA_BASE_URL: http://ollama:11434
       STRATEGIST_MODEL: llama3.2:3b
-      STRATEGIST_RAG_LIMIT: "3"
-      STRATEGIST_MAX_USER_CHARS: "3500"
-      STRATEGIST_OLLAMA_NUM_CTX: "2048"
-      STRATEGIST_OLLAMA_NUM_PREDICT: "512"
-      STRATEGIST_OLLAMA_NUM_BATCH: "96"
+      STRATEGIST_RAG_LIMIT: "2"
+      STRATEGIST_MAX_USER_CHARS: "2500"
+      STRATEGIST_OLLAMA_NUM_CTX: "1024"
+      STRATEGIST_OLLAMA_NUM_PREDICT: "384"
+      STRATEGIST_OLLAMA_NUM_BATCH: "48"
     depends_on:
       - qdrant
       - ollama
