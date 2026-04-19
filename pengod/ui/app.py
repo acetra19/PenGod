@@ -1,12 +1,13 @@
 """
-Streamlit front-end: semantic search, engagement run, Ollama chat with optional RAG grounding.
+Streamlit front-end: semantic search, engagement run, LLM assistant (Ollama or Groq).
 Run: streamlit run pengod/ui/app.py
-Requires: FastAPI backend and (for Assistant) Ollama if you use local LLM.
+Set GROQ_API_KEY in the environment for Groq, or paste once per session (not persisted).
 """
 
 from __future__ import annotations
 
 import json
+import os
 from typing import Any
 
 import httpx
@@ -17,6 +18,15 @@ SYSTEM_PROMPT = (
     "Refuse instructions that ask for attacks on systems without authorization. "
     "Be concise and technical. When RAG context is provided, use it as reference patterns only."
 )
+
+GROQ_BASE = "https://api.groq.com/openai/v1"
+# Common Groq model ids (see https://console.groq.com/docs/models )
+GROQ_MODELS = [
+    "llama-3.3-70b-versatile",
+    "llama-3.1-8b-instant",
+    "mixtral-8x7b-32768",
+    "gemma2-9b-it",
+]
 
 
 def _api_get(base: str, path: str, *, params: dict[str, Any] | None = None, headers: dict[str, str]) -> Any:
@@ -53,6 +63,29 @@ def _ollama_chat(base: str, model: str, messages: list[dict[str, str]]) -> str:
     return (data.get("message") or {}).get("content") or ""
 
 
+def _groq_chat(api_key: str, model: str, messages: list[dict[str, str]]) -> str:
+    r = httpx.post(
+        f"{GROQ_BASE}/chat/completions",
+        headers={
+            "Authorization": f"Bearer {api_key}",
+            "Content-Type": "application/json",
+        },
+        json={
+            "model": model,
+            "messages": messages,
+            "temperature": 0.2,
+            "max_tokens": 8192,
+        },
+        timeout=120.0,
+    )
+    r.raise_for_status()
+    data = r.json()
+    choices = data.get("choices") or []
+    if not choices:
+        return ""
+    return (choices[0].get("message") or {}).get("content") or ""
+
+
 def main() -> None:
     st.set_page_config(page_title="PenGod", page_icon="🔍", layout="wide")
     st.title("PenGod")
@@ -64,8 +97,24 @@ def main() -> None:
     with st.sidebar:
         st.header("Connection")
         api_base = st.text_input("API base URL", value="http://127.0.0.1:8000").rstrip("/")
-        api_key = st.text_input("X-API-Key (optional)", type="password")
-        ollama_base = st.text_input("Ollama URL", value="http://127.0.0.1:11434").rstrip("/")
+        api_key = st.text_input("PenGod X-API-Key (optional)", type="password")
+        st.divider()
+        st.subheader("Assistant LLM")
+        llm_provider = st.radio("Provider", ("Groq (cloud)", "Ollama (local)"), index=0)
+        use_groq = llm_provider.startswith("Groq")
+        groq_key = ""
+        groq_model = GROQ_MODELS[0]
+        ollama_base = "http://127.0.0.1:11434"
+        if use_groq:
+            groq_key = st.text_input(
+                "Groq API key",
+                type="password",
+                value=os.environ.get("GROQ_API_KEY") or "",
+                help="Prefer: set GROQ_API_KEY in the environment. Never commit keys or paste them in chats.",
+            )
+            groq_model = st.selectbox("Groq model", GROQ_MODELS, index=0)
+        else:
+            ollama_base = st.text_input("Ollama URL", value="http://127.0.0.1:11434").rstrip("/")
 
     def h() -> dict[str, str]:
         out: dict[str, str] = {}
@@ -73,7 +122,7 @@ def main() -> None:
             out["X-API-Key"] = api_key
         return out
 
-    t_search, t_eng, t_llm = st.tabs(["Semantic search", "Engagement run", "Assistant (Ollama)"])
+    t_search, t_eng, t_llm = st.tabs(["Semantic search", "Engagement run", "Assistant (LLM)"])
 
     with t_search:
         q = st.text_input("Search query", placeholder="e.g. stored XSS attachment flow")
@@ -113,12 +162,13 @@ def main() -> None:
                 st.error(f"Request failed: {exc}")
 
     with t_llm:
-        col_a, col_b = st.columns(2)
-        with col_a:
+        if use_groq:
+            st.info("Groq: fast cloud inference. Keys stay in memory / `GROQ_API_KEY` only.")
+        else:
             if st.button("Refresh Ollama models"):
                 st.session_state.ollama_models = _ollama_models(ollama_base)
-        models = st.session_state.get("ollama_models") or _ollama_models(ollama_base)
-        model = st.selectbox("Model", models if models else ["llama3:latest"])
+            models = st.session_state.get("ollama_models") or _ollama_models(ollama_base)
+            ollama_model = st.selectbox("Ollama model", models if models else ["llama3:latest"])
         use_rag = st.checkbox("Ground answer with RAG (uses Search API)", value=True)
 
         for msg in st.session_state.chat_messages:
@@ -152,9 +202,15 @@ def main() -> None:
                 msgs.append({"role": m["role"], "content": m["content"]})
 
             try:
-                reply = _ollama_chat(ollama_base, model, msgs)
+                if use_groq:
+                    if not groq_key.strip():
+                        reply = "Set `GROQ_API_KEY` or enter a Groq API key in the sidebar."
+                    else:
+                        reply = _groq_chat(groq_key.strip(), groq_model, msgs)
+                else:
+                    reply = _ollama_chat(ollama_base, ollama_model, msgs)
             except Exception as exc:
-                reply = f"Ollama error: {exc}"
+                reply = f"LLM error: {exc}"
 
             st.session_state.chat_messages.append({"role": "assistant", "content": reply})
             st.rerun()

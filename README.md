@@ -90,7 +90,9 @@ pip install -e ".[ui]"
 streamlit run pengod/ui/app.py
 ```
 
-In the sidebar set **API base URL** (e.g. `http://127.0.0.1:8000` or `http://YOUR_VPS_IP:8080`). Optional: **X-API-Key** if the server has `PENGOD_API_KEY` set. For **Assistant**, run [Ollama](https://ollama.com/) locally and set **Ollama URL** (default `http://127.0.0.1:11434`).
+In the sidebar set **API base URL** (e.g. `http://127.0.0.1:8000` or `http://YOUR_VPS_IP:8080`). Optional: **X-API-Key** if the server has `PENGOD_API_KEY` set.
+
+**Assistant LLM:** choose **Groq (cloud)** or **Ollama (local)**. For Groq, set `GROQ_API_KEY` in the environment before starting Streamlit, or paste the key in the sidebar (session only). Get a key from [Groq Console](https://console.groq.com/) — never commit keys or paste them in public chats.
 
 Tabs: **Semantic search**, **Engagement run** (probe + RAG), **Assistant** (chat with optional RAG grounding).
 
