@@ -92,6 +92,7 @@ def build_strategist_graph(
         opts = {
             "num_ctx": settings.strategist_ollama_num_ctx,
             "num_predict": settings.strategist_ollama_num_predict,
+            "num_batch": settings.strategist_ollama_num_batch,
         }
         report = await ollama_chat(
             settings.ollama_base_url,

@@ -44,6 +44,7 @@ services:
       STRATEGIST_MAX_USER_CHARS: "3500"
       STRATEGIST_OLLAMA_NUM_CTX: "2048"
       STRATEGIST_OLLAMA_NUM_PREDICT: "512"
+      STRATEGIST_OLLAMA_NUM_BATCH: "96"
     depends_on:
       - qdrant
       - ollama

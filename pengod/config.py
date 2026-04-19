@@ -62,6 +62,12 @@ class Settings(BaseSettings):
         le=32768,
         description="Max new tokens for Strategist reply",
     )
+    strategist_ollama_num_batch: int = Field(
+        default=128,
+        ge=32,
+        le=512,
+        description="Ollama num_batch — lower reduces CPU RAM spikes during inference",
+    )
 
 
 def get_settings() -> Settings:
