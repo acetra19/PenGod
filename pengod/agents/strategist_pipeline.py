@@ -82,7 +82,7 @@ def build_strategist_graph(
                     "title": pl.get("title"),
                     "weakness": pl.get("weakness"),
                     "severity": pl.get("severity"),
-                    "text_preview": str(pl.get("text", ""))[:1200],
+                    "text_preview": str(pl.get("text", ""))[:400],
                 }
             )
         payload = {
@@ -92,15 +92,21 @@ def build_strategist_graph(
             "prior_error": state.get("error"),
             "similar_disclosures": slim,
         }
-        user_text = json.dumps(payload, indent=2)[:28000]
+        cap = settings.strategist_max_user_chars
+        user_text = json.dumps(payload, indent=2)[:cap]
         messages = [
             {"role": "system", "content": STRATEGIST_SYSTEM},
             {"role": "user", "content": user_text},
         ]
+        opts = {
+            "num_ctx": settings.strategist_ollama_num_ctx,
+            "num_predict": settings.strategist_ollama_num_predict,
+        }
         report = await ollama_chat(
             settings.ollama_base_url,
             settings.strategist_model,
             messages,
+            options=opts,
         )
         return {"strategist_report": report}
 

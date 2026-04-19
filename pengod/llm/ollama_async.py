@@ -11,12 +11,16 @@ async def ollama_chat(
     messages: list[dict[str, str]],
     *,
     timeout_seconds: float = 300.0,
+    options: dict[str, int | float] | None = None,
 ) -> str:
     base = base_url.rstrip("/")
+    body: dict[str, object] = {"model": model, "messages": messages, "stream": False}
+    if options:
+        body["options"] = options
     async with httpx.AsyncClient(timeout=timeout_seconds) as client:
         r = await client.post(
             f"{base}/api/chat",
-            json={"model": model, "messages": messages, "stream": False},
+            json=body,
         )
         if r.status_code >= 400:
             body = (r.text or "")[:2000]
