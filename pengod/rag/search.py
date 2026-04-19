@@ -33,14 +33,15 @@ async def semantic_search(
         vectors = await asyncio.to_thread(embedder.embed, [query])
         if not vectors:
             return []
-        hits = await qdrant.client.search(
+        # qdrant-client 1.17+: use query_points (search() removed from AsyncQdrantClient)
+        resp = await qdrant.client.query_points(
             collection_name=qdrant.default_collection,
-            query_vector=vectors[0],
+            query=vectors[0],
             limit=limit,
             with_payload=True,
         )
         out: list[dict[str, Any]] = []
-        for hit in hits:
+        for hit in resp.points:
             out.append(
                 {
                     "score": hit.score,
