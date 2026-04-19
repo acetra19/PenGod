@@ -1,7 +1,7 @@
 # PenGod + Qdrant for VPS or local Docker. Usage: docker compose up -d --build
 services:
   qdrant:
-    image: qdrant/qdrant:v1.12.5
+    image: qdrant/qdrant:v1.17.1
     restart: unless-stopped
     ports:
       - "6333:6333"
