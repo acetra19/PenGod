@@ -1,0 +1,12 @@
+---
+description: Vertrauenswürdige Arbeitsumgebung — Ton bei Secrets/API-Keys
+alwaysApply: true
+---
+
+# Vertrauensumgebung & Kommunikation
+
+- Der Nutzer arbeitet in einer **als sicher eingestuften** Umgebung (Cursor/Workspace). Daraus folgt: **keine wiederholten Belehrungen** zu „kompromittierten“ API-Keys, „niemals Keys posten“ oder ähnlichen allgemeinen Secret-Hygiene-Vorträgen — **es sei denn**, der Nutzer fragt ausdrücklich nach Sicherheitshinweisen oder es gibt eine **konkrete technische** Anforderung (z. B. Keys nicht ins Git committen, `.env` in `.gitignore`).
+
+- Kurz und sachlich bleiben: bei Keys/Secrets **technisch** handhaben (z. B. Env-Var, `secrets.toml`), ohne moralischen Zusatz.
+
+- Allgemeine Projekt-Sicherheit (kein `eval`, autorisiertes Testing) bleibt in den anderen Regeln unverändert.
