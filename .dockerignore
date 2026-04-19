@@ -1,0 +1,14 @@
+.venv
+__pycache__
+.git
+.gitignore
+.pytest_cache
+.ruff_cache
+*.egg-info
+.cursor
+**/terminals
+Casestudies.txt
+uploads
+.env
+*.md
+!README.md

@@ -1,0 +1,66 @@
+# Production-style stack: Qdrant and PenGod are NOT published to the host;
+# only Nginx exposes HTTP (optionally HTTPS after you add certs).
+# Usage: docker compose -f docker-compose.prod.yml up -d --build
+services:
+  qdrant:
+    image: qdrant/qdrant:v1.12.5
+    restart: unless-stopped
+    volumes:
+      - qdrant_data:/qdrant/storage
+    environment:
+      QDRANT__SERVICE__GRPC_PORT: 6334
+    networks:
+      - pengod_internal
+
+  pengod:
+    build: .
+    restart: unless-stopped
+    expose:
+      - "8000"
+    environment:
+      QDRANT_URL: http://qdrant:6333
+      QDRANT_STRICT: "false"
+      EMBEDDING_MODEL: BAAI/bge-small-en-v1.5
+      EMBEDDING_VECTOR_SIZE: "384"
+      HF_HOME: /root/.cache/huggingface
+    depends_on:
+      - qdrant
+    volumes:
+      - pengod_hf_cache:/root/.cache/huggingface
+      - ./data:/data:ro
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "python",
+          "-c",
+          "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/health', timeout=5).read()",
+        ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 120s
+    networks:
+      - pengod_internal
+
+  nginx:
+    image: nginx:1.27-alpine
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      # - "443:443"
+    volumes:
+      - ./deploy/nginx.conf:/etc/nginx/conf.d/default.conf:ro
+      # - ./deploy/certs:/etc/nginx/certs:ro
+    depends_on:
+      - pengod
+    networks:
+      - pengod_internal
+
+networks:
+  pengod_internal:
+    driver: bridge
+
+volumes:
+  qdrant_data:
+  pengod_hf_cache:

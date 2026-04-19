@@ -1,0 +1,27 @@
+---
+description: Bug-Bounty-Kontext, Architekturprinzipien und Sicherheitsgrenzen für PenGod
+alwaysApply: true
+---
+
+# PenGod — Kernprinzipien
+
+## Rechtsrahmen und Zweck
+
+- Das System dient **autorisiertem** Bug-Bounty und Security Research. Keine Anleitungen zu Angriffen auf Systeme ohne Erlaubnis.
+- Fokus: **technische Muster**, Protokolle, Verteidigung, reproduzierbare Forschung — nicht „Umgehung“ allgemeiner Sicherheitsrichtlinien.
+
+## Architektur
+
+- **Multi-Agent** (LangGraph bevorzugt): klare Zuständigkeiten (Archivist/RAG, Strategist, Payload Lab).
+- **Local-First für generierte Payloads**: Ausführung über lokale LLMs (z. B. Ollama); externe APIs für Planung/Recherche nur dort, wo sinnvoll und erlaubt.
+- **RAG**: Jeder Treffer muss **Metadaten** tragen (mindestens CWE-ID, Bounty-Betrag/Range wo vorhanden, Tech-Stack).
+
+## Code-Qualität
+
+- **Strikte Typannotationen** in Python (`typing`, Pydantic v2).
+- **Async-first**: Netzwerk, LLM-Calls, Qdrant über `async`/`await`.
+- **Kein `eval()` / `exec()`** auf KI-generiertem Code; keine unsichere Deserialisierung von Modell-Output.
+
+## UI- und Produkttexte
+
+- Alle sichtbaren Texte der Anwendung/CLI in **Englisch** (Projektregel).

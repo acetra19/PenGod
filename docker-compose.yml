@@ -1,0 +1,45 @@
+# PenGod + Qdrant for VPS or local Docker. Usage: docker compose up -d --build
+services:
+  qdrant:
+    image: qdrant/qdrant:v1.12.5
+    restart: unless-stopped
+    ports:
+      - "6333:6333"
+    volumes:
+      - qdrant_data:/qdrant/storage
+    environment:
+      QDRANT__SERVICE__GRPC_PORT: 6334
+
+  pengod:
+    build: .
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+    environment:
+      QDRANT_URL: http://qdrant:6333
+      QDRANT_STRICT: "false"
+      EMBEDDING_MODEL: BAAI/bge-small-en-v1.5
+      EMBEDDING_VECTOR_SIZE: "384"
+      HF_HOME: /root/.cache/huggingface
+    depends_on:
+      - qdrant
+    volumes:
+      - pengod_hf_cache:/root/.cache/huggingface
+      # Mount case exports on the host (create ./data on the server)
+      - ./data:/data:ro
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "python",
+          "-c",
+          "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/health', timeout=5).read()",
+        ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 120s
+
+volumes:
+  qdrant_data:
+  pengod_hf_cache:

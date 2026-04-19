@@ -1,0 +1,29 @@
+---
+description: Python-Stack — LangGraph, FastAPI, Qdrant, Tools
+globs: "**/*.py"
+alwaysApply: false
+---
+
+# PenGod — Python & Stack
+
+## Stack-Richtung
+
+- **Orchestrierung**: LangGraph / LangChain; Backend **FastAPI** (async).
+- **Vektor-DB**: **Qdrant** mit Filterung auf Payload-/Report-Metadaten.
+- **Embeddings**: FastEmbed oder Gemini Embeddings — konfigurierbar, nicht hardcodieren.
+- **Frontend**: Streamlit oder CLI — schlank halten, Business-Logik im Core-Paket.
+
+## Externe Tools (Hooks)
+
+- Integration vorbereiten für **Subfinder**, **HTTPX**, **Nuclei**; Secrets/Keys nie im Repo; nur autorisierte Ziele.
+
+## Datenmodell
+
+- Zentrale Schemas mit **Pydantic**; „Vulnerability Report“ HackerOne-artig inkl. Metadaten für RAG.
+- Neue Module unter `pengod/`; keine Monolithen — **Dateien unter 500 Zeilen** (bei Überschreitung aufteilen).
+
+## Agent-Rollen (Kurz)
+
+- **Archivist**: Ingestion, semantische Suche nach Logik-/Pattern-Themen, nicht nur String-Match.
+- **Strategist**: hohes Reasoning, Recon mit RAG-Insights verbinden.
+- **Payload Lab**: nur lokal, folgt Strategist-Instruktionen; Output validieren, nicht blind ausführen.

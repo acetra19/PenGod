@@ -1,0 +1,45 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "pengod"
+version = "0.1.0"
+description = "Collaborative AI agent system for authorized bug bounty research (RAG + multi-agent)."
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = [
+    "pydantic==2.10.6",
+    "pydantic-settings==2.6.1",
+    "qdrant-client==1.17.1",
+    "fastapi==0.115.6",
+    "uvicorn[standard]==0.32.1",
+    "langgraph==0.2.76",
+    "fastembed>=0.3.5,<0.5",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest==8.3.4",
+    "pytest-asyncio==0.24.0",
+    "ruff==0.8.6",
+]
+agents = [
+    "langchain-core>=0.3,<0.4",
+]
+
+[project.scripts]
+pengh = "pengod.cli:main"
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["pengod*"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py310"
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+asyncio_default_fixture_loop_scope = "function"
+testpaths = ["tests"]
