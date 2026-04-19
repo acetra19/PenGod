@@ -26,7 +26,7 @@ mkdir -p data
 docker compose up -d --build
 ```
 
-**Production-style compose** (`docker-compose.prod.yml`): **Qdrant has no host port** (only reachable inside the Docker network). **PenGod** is not published; **Nginx** listens on **80** and proxies to the API. Use this on a VPS behind a firewall.
+**Production-style compose** (`docker-compose.prod.yml`): **Qdrant has no host port** (only reachable inside the Docker network). **PenGod** is not published; **Nginx** is mapped to host port **8080** (not 80, so it does not clash with an existing web server on the VPS).
 
 ```bash
 mkdir -p data
@@ -35,7 +35,7 @@ docker compose -f docker-compose.prod.yml up -d --build
 
 - Ingest (same `./data` mount):  
   `docker compose -f docker-compose.prod.yml exec pengod pengh ingest /data/Casestudies.txt`
-- Call the API via Nginx: `http://YOUR_SERVER/v1/search?q=...` and `http://YOUR_SERVER/health`.
+- Call the API via Nginx: `http://YOUR_SERVER:8080/v1/search?q=...` and `http://YOUR_SERVER:8080/health`.
 - TLS: place certs under `./deploy/certs/`, uncomment the `443` port and volume in `docker-compose.prod.yml`, and the second `server` block in `deploy/nginx.conf` (or terminate TLS with a host-level reverse proxy / CDN instead).
 - First start may take minutes while **FastEmbed** downloads the model; `HF_HOME` is persisted in a Docker volume.
 
