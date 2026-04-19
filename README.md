@@ -81,6 +81,19 @@ curl -sS -X POST http://127.0.0.1:8080/v1/engagement/run \
 
 If `PENGOD_API_KEY` is set in the environment, send header `X-API-Key: <your-key>`.
 
+### Web UI (Streamlit)
+
+Install the UI extra, then point the browser at the app (API must be running — local or VPS).
+
+```bash
+pip install -e ".[ui]"
+streamlit run pengod/ui/app.py
+```
+
+In the sidebar set **API base URL** (e.g. `http://127.0.0.1:8000` or `http://YOUR_VPS_IP:8080`). Optional: **X-API-Key** if the server has `PENGOD_API_KEY` set. For **Assistant**, run [Ollama](https://ollama.com/) locally and set **Ollama URL** (default `http://127.0.0.1:11434`).
+
+Tabs: **Semantic search**, **Engagement run** (probe + RAG), **Assistant** (chat with optional RAG grounding).
+
 ### Run the API
 
 ```bash

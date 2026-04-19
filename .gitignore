@@ -34,3 +34,6 @@ htmlcov/
 # Project data (optional: remove line to track small fixtures)
 Casestudies.txt
 data/
+
+# Streamlit
+.streamlit/secrets.toml
